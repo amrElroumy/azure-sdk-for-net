@@ -10,14 +10,7 @@ param(
 )
 
 . ${PSScriptRoot}\common.ps1
-function Get-LanguageName($lang)
-{
-    $pkgLang = $languageNameMapping[$lang]
-    if (!$pkgLang) { 
-      $pkgLang = $lang
-    }
-    return $pkgLang
-}
+
 function Get-ReleaseDay($baseDate)
 {
     # Find first friday
@@ -30,14 +23,6 @@ function Get-ReleaseDay($baseDate)
     $baseDate = $baseDate.AddDays(4)
 
     return $baseDate;
-}
-
-$languageNameMapping = @{
-    cpp = "C++"
-    dotnet = ".NET"
-    java = "Java"
-    js = "JavaScript"
-    python = "Python"
 }
 
 $ErrorPreference = 'Stop'
@@ -91,15 +76,9 @@ if (!$newVersion)
 $newVersionParsed = [AzureEngSemanticVersion]::ParseVersionString($newVersion)
 if ($null -eq $newVersionParsed)
 {
-    Write-Error "Invalid version $newVersion. Please try agaiin with a valid version."
+    Write-Error "Invalid version $newVersion. Version must follow standard SemVer rules, see https://aka.ms/azsdk/engsys/packageversioning"
     exit 1
 }
-
-Write-Host
-Write-Host "Detected released type [ $($newVersionParsed.VersionType) ]" -ForegroundColor Green
-
-Write-Host
-Write-Host "Updating versions to [ $newVersion ] with date [ $releaseDateString ]" -ForegroundColor Green
 
 if (Test-Path "Function:SetPackageVersion")
 {
@@ -114,8 +93,16 @@ else
 }
 
 &$EngCommonScriptsDir/Update-DevOps-Release-WorkItem.ps1 `
--language (Get-LanguageName($Language)) `
+-language $Language `
 -packageName $packageProperties.Name `
 -version $newVersion `
 -plannedDate $releaseDateString `
--packageRepoPath $serviceDirectory
+-packageRepoPath $packageProperties.serviceDirectory
+
+$changes = git status
+if ($changes[1] -eq "Changes to be committed:")
+{
+    $changes
+    Write-Host "Some changes were made to the repo source" -ForegroundColor Green
+    Write-Host "Submit a pull request with the necessary changes to the repo" -ForegroundColor Green
+}
