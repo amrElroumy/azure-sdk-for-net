@@ -26,7 +26,7 @@ jobs:
     pool:
       vmImage: 'windows-2019'
 
-    timeoutInMinutes: 360
+    timeoutInMinutes: 120
     steps:
       - download: net-core
         artifact: packages
@@ -42,7 +42,6 @@ jobs:
           GdnBreakGdnToolCredScan: true
           GdnBreakGdnToolCredScanSeverity: Error
           GdnBreakBaselineFiles: \\eng\dotnet.gdnbaselines
-          GdnBreakSuppressionFiles: \\eng\CredScanSuppression.json
       - task: securedevelopmentteam.vss-secure-development-tools.build-task-publishsecurityanalysislogs.PublishSecurityAnalysisLogs@3
         displayName: 'Publish Security Analysis Logs'
         continueOnError: true
